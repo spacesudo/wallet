@@ -1,0 +1,8 @@
+bot/.env
+*.db
+*.sqlite
+*.txt
+*.json
+files/
+__pycache__
+bot/*.txt
