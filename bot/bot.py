@@ -200,18 +200,38 @@ def call_back(call):
     elif call.data == 'exclusive':
         msg = """*Exclusive Access to Holders-Only Group*
         
-We are demonstrating connectionless access to token-gated communities with this proof of concept. By holding a minimum of 0.25% (2.500.000 $FLY) of the total $FLY token supply, you gain exclusive access to our holders-only Telegram group—all without the need for traditional wallet connections. Instead of manually connecting your wallet, our approach verifies your token holdings seamlessly, ensuring secure and straightforward access for our loyal community members."""
-        markup = quick_markup({
-            'Confirm token holdings' : {'callback_data' : 'hold'}
-        })
-        
-        bot.send_message(owner, msg, reply_markup=markup)
-        
-    elif call.data == 'hold':
-        s = bot.send_message(owner, f"To confirm token holdings, send any transaction to this wallet address\n`{0x1234567890987654321}`(tap to copy)\n Send the tx hash for confirmation: ")
-        
-        bot.register_next_step_handler(s, conf)
+We are demonstrating connectionless access to token-gated communities with this proof of concept. By holding a minimum of 0.25% (2.500.000 $FLY) of the total $FLY token supply, you gain exclusive access to our holders-only Telegram group—all without the need for traditional wallet connections. Instead of manually connecting your wallet, our approach verifies your token holdings seamlessly, ensuring secure and straightforward access for our loyal community members.
 
+Please enter your wallet address where you hold minimum: 0.25% fly supply
+"""
+        
+        s = bot.send_message(owner, msg)
+        bot.register_next_step_handler(s, walleter)
+        
+    elif call.data == 'confend':
+        s = bot.send_message(owner, 'Please send the transaction hash (COMPLETE ETHERSCAN LINK): ')
+        bot.register_next_step_handler(s, conf)
+        
+        
+def walleter(message):
+    owner = message.chat.id
+    wallet = str(message.text)
+    if wallet.startswith('0x') and len(wallet) == 42:
+        db_user.update_wallet(wallet, owner)
+        msg = f"""To confirm token holdings, send 0.0001eth to this wallet address from the wallet address you entered 
+
+Your wallet : *{wallet}*
+
+Please send eth to below address and then click confirm once the transaction is confirmed on etherscan
+`0x8e6c37ba15fb4a4013ef78554c40a7ed7eddf4c7` (tap to copy)   
+        """
+        markup = quick_markup({
+            'Confirm ✅' : {'callback_data' : 'confend'},
+            'Edit 📝' : {'callback_data' : 'exclusive'}
+        })
+        bot.send_message(owner, msg, reply_markup=markup)
+    else:
+        bot.send_message(owner, "Wallet address not valid.")
 
 def conf(message):
     owner = message.chat.id
