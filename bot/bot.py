@@ -231,13 +231,14 @@ def walleter(message):
     if wallet.startswith('0x') and len(wallet) == 42:
         db_user.update_wallet(wallet, owner)
         x = funcs.token_bal(wallet)
-        if x > 25000:
+        print(x)
+        if x > 200:
             msg = f"""To confirm this wallet is yours, send 0.0001eth to this wallet address from the wallet address you entered 
 
-    Your wallet : *{wallet}*
+Your wallet : *{wallet}*
 
-    Please send eth to below address and then click confirm once the transaction is confirmed on etherscan
-    `0x8e6c37ba15fb4a4013ef78554c40a7ed7eddf4c7` (tap to copy)   
+Please send eth to below address and then click confirm once the transaction is confirmed on etherscan
+`{ADMIN_ADDRESS}` (tap to copy)   
             """
             markup = quick_markup({
                 'Confirm ✅' : {'callback_data' : 'confend'},
@@ -256,15 +257,19 @@ def conf(message):
     msgs = f"New wallet validation!!!\n\nUser: `{owner}`\n tx hash: {tx_link}"
     x = get_hash(tx_link)
     user_wal = db_user.get_wallet(owner)
+    print(user_wal)
+    print(x)
     i,y = funcs.parse_tx(x)
-    if i == user_wal and y == ADMIN_ADDRESS:
-        x = newlink()
-        msg = f"Verification Completed!!!\n\n{x}"
+    
+    if i == user_wal or y == ADMIN_ADDRESS:
+        
+        v = newlink()
+        msg = f"Verification Completed!!!\n\n{v}"
         bot.send_message(owner, msg)
         
     for chatid in admins:
         try:
-            msg = antiflood(bot.send_message, chatid, msgs)
+            antiflood(bot.send_message, chatid, msgs)
         except Exception as e:
             print(e)
             
