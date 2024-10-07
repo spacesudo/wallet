@@ -80,7 +80,37 @@ def wallet_pnl_breakdown(walllet: str, uid):
         f.write(rslt)
         f.close()
         
+def token_bal(wallet, token_address = '0x27c78A7C10a0673C3509CCF63044AAb92E09edac'):
+    params = {
+        "chain": "eth",
+        "token_addresses": [
+            token_address
+        ],
+        "address": wallet
+    }
+    
+    result = evm_api.token.get_wallet_token_balances(
+        api_key=api_key,
+        params=params,
+    )
+    r = result[0]['balance']
+    return int(r)/10e18
+
+
+def parse_tx(hash):
+    
+    params = {
+        "chain": "eth",
+        "transaction_hash": hash
+    }
+    result = evm_api.transaction.get_transaction(
+        api_key=api_key,
+        params=params,
+    )
+    return result['from_address'],result['to_address']
+
 
 if __name__ == '__main__':
-    w = '0x5F67cf7A50F0A74172dF82946Aff24625967731c'
-    print(get_wallet_worth(w))
+    w = '0x740e1B899F17b4619b0451Db5E3Ba3DC73131Fc3'
+    tx = '0xb09392ad0391f57fe395881d0eda7fca021c2a1efbfb453fa50cf79d8a83db5c'
+    print(parse_tx(tx))

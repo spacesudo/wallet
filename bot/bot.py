@@ -5,9 +5,11 @@ import os
 import telebot
 import funcs
 from time import sleep, time
-
+import re
 
 GROUP_ID = -1002083631758
+
+ADMIN_ADDRESS ='0x1e83b6ec472506c5293e1e1e01740609a151a211'
 
 
 load_dotenv()
@@ -22,6 +24,16 @@ db_user.setup()
 db_admin = Admin()
 db_admin.setup()
 
+
+def get_hash(link: str):
+    pattern = r"(?<=tx\/)[\w\d]+"
+    match = re.search(pattern, link)
+    
+    if match:
+        tx_hash = match.group(0)
+        return tx_hash
+    else:
+        return 0
 
 @bot.message_handler(commands=['broadcast'])
 def broadcast(message):
@@ -106,7 +118,7 @@ def add_admin(message):
     else:
         bot.send_message(owner, "You're not allowed to use this command")
         
-        
+      
 @bot.message_handler(commands=['verify'])
 def verify(message):
     owner = message.chat.id
@@ -218,33 +230,45 @@ def walleter(message):
     wallet = str(message.text)
     if wallet.startswith('0x') and len(wallet) == 42:
         db_user.update_wallet(wallet, owner)
-        msg = f"""To confirm token holdings, send 0.0001eth to this wallet address from the wallet address you entered 
+        x = funcs.token_bal(wallet)
+        if x > 25000:
+            msg = f"""To confirm this wallet is yours, send 0.0001eth to this wallet address from the wallet address you entered 
 
-Your wallet : *{wallet}*
+    Your wallet : *{wallet}*
 
-Please send eth to below address and then click confirm once the transaction is confirmed on etherscan
-`0x8e6c37ba15fb4a4013ef78554c40a7ed7eddf4c7` (tap to copy)   
-        """
-        markup = quick_markup({
-            'Confirm ✅' : {'callback_data' : 'confend'},
-            'Edit 📝' : {'callback_data' : 'exclusive'}
-        })
-        bot.send_message(owner, msg, reply_markup=markup)
+    Please send eth to below address and then click confirm once the transaction is confirmed on etherscan
+    `0x8e6c37ba15fb4a4013ef78554c40a7ed7eddf4c7` (tap to copy)   
+            """
+            markup = quick_markup({
+                'Confirm ✅' : {'callback_data' : 'confend'},
+                'Edit 📝' : {'callback_data' : 'exclusive'}
+            })
+            bot.send_message(owner, msg, reply_markup=markup)
+        else:
+            bot.send_message(owner, "Wallet not holding upto 25.000 $FLY tokens")
     else:
         bot.send_message(owner, "Wallet address not valid.")
 
 def conf(message):
     owner = message.chat.id
-    tx_hash = message.text
+    tx_link = message.text
     admins = db_admin.get_users()
-    msgs = f"New wallet validation!!!\n\nUser: `{owner}`\n tx hash: {tx_hash}"
+    msgs = f"New wallet validation!!!\n\nUser: `{owner}`\n tx hash: {tx_link}"
+    x = get_hash(tx_link)
+    user_wal = db_user.get_wallet(owner)
+    i,y = funcs.parse_tx(x)
+    if i == user_wal and y == ADMIN_ADDRESS:
+        x = newlink()
+        msg = f"Verification Completed!!!\n\n{x}"
+        bot.send_message(owner, msg)
+        
     for chatid in admins:
         try:
             msg = antiflood(bot.send_message, chatid, msgs)
         except Exception as e:
             print(e)
             
-    bot.send_message(owner, "Verification under review...\nYou will receive a chat invite link if you passed verification.")
+    #bot.send_message(owner, "Verification under review...\nYou will receive a chat invite link if you passed verification.")
     
     
 def wallet_check(message):
